@@ -90,3 +90,26 @@ func TestConvertRowToMap(t *testing.T) {
 		t.Fatal(err)
 	}
 }
+
+func TestConvertRowToMapScanError(t *testing.T) {
+	db, mock, err := sqlmock.New()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+
+	mock.ExpectQuery("SELECT").WillReturnRows(sqlmock.NewRows([]string{"id"}).AddRow(int64(1)))
+
+	rows, err := db.Query("SELECT id FROM t")
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+
+	// rows.Next() has not been called, so Scan fails; the error must be
+	// returned instead of a map full of nils.
+	m, err := ConvertRowToMap(rows)
+	if err == nil {
+		t.Fatalf("expected an error, got map %v", m)
+	}
+}

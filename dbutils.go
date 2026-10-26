@@ -36,7 +36,9 @@ func ConvertRowToMap(r *sql.Rows) (map[string]any, error) {
 		vals[i] = &InterfaceScanner{Name: cols[i]}
 	}
 
-	r.Scan(vals...)
+	if err := r.Scan(vals...); err != nil {
+		return nil, err
+	}
 
 	for i := range vals {
 		scanner := *(vals[i].(*InterfaceScanner))
