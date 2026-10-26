@@ -7,11 +7,11 @@ import (
 
 type InterfaceScanner struct {
 	Name  string
-	Value interface{}
+	Value any
 }
 
 // InterfaceScanner implements the sql.Scan interface
-func (s *InterfaceScanner) Scan(src interface{}) error {
+func (s *InterfaceScanner) Scan(src any) error {
 	switch src.(type) {
 	default:
 		s.Value = src
@@ -23,20 +23,22 @@ func (s *InterfaceScanner) Scan(src interface{}) error {
 }
 
 // Convert a row to a map. Expects rows.Next() to have been already called.
-func ConvertRowToMap(r *sql.Rows) (map[string]interface{}, error) {
-	result := make(map[string]interface{})
+func ConvertRowToMap(r *sql.Rows) (map[string]any, error) {
+	result := make(map[string]any)
 
 	cols, err := r.Columns()
 	if err != nil {
 		return result, err
 	}
 
-	vals := make([]interface{}, len(cols))
+	vals := make([]any, len(cols))
 	for i := range vals {
 		vals[i] = &InterfaceScanner{Name: cols[i]}
 	}
 
-	r.Scan(vals...)
+	if err := r.Scan(vals...); err != nil {
+		return nil, err
+	}
 
 	for i := range vals {
 		scanner := *(vals[i].(*InterfaceScanner))
